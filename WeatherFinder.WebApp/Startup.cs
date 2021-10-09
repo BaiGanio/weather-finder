@@ -5,9 +5,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using WeatherFinder.DB;
+using WeatherFinder.Services;
 
 namespace WeatherFinder.WebApp
 {
@@ -24,6 +27,14 @@ namespace WeatherFinder.WebApp
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+            services.AddDbContext<WeatherFinderDbContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("dbconn"))
+            );
+
+            services.AddTransient<IWeatherServiceManager, WeatherServiceManager>(s =>
+                   new WeatherServiceManager(
+                       s.GetRequiredService<IConfiguration>()
+                   ));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

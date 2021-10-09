@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Nancy.Json;
 using System;
 using System.Collections.Generic;
@@ -10,15 +11,21 @@ using WeatherFinder.Models;
 
 namespace WeatherFinder.Services
 {
-    public class WeatherServiceManager
+    public interface IWeatherServiceManager
     {
-        private const string apikey = "3575fdb046d8af2fe4a6354c8a8212c4";
+        Task<IEnumerable<WeatherForecast>> GetAllForecastsAsync();
+        Task<WeatherForecast> GetIndustryForecast(string city);
+    }
+    public class WeatherServiceManager : IWeatherServiceManager
+    {
+        private readonly string apikey = "";
 
         private readonly WeatherFinderDbContext _ctx;
-        public WeatherServiceManager()
+        public WeatherServiceManager(IConfiguration config)
         {
             _ctx = new WeatherFinderDbContext();
-         }
+            apikey = config["OpenWeatherMap:ApiKey"];
+        }
         public async Task<IEnumerable<WeatherForecast>> GetAllForecastsAsync()
         {
             return await _ctx.Forecasts.ToListAsync();
@@ -41,7 +48,7 @@ namespace WeatherFinder.Services
                 var humidity = jsonContent["main"]["humidity"];
                 var wind = jsonContent["wind"]["speed"];
 
-                var forecast = 
+                var forecast =
                     new WeatherForecast()
                     {
                         Id = Guid.NewGuid().ToString(),
@@ -67,7 +74,7 @@ namespace WeatherFinder.Services
 
 
 
-        public async Task LogForecast(WeatherForecast weatherForecast)
+        private async Task LogForecast(WeatherForecast weatherForecast)
         {
             await _ctx.Forecasts.AddAsync(weatherForecast);
             await _ctx.SaveChangesAsync();
